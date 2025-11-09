@@ -61,8 +61,8 @@ ZONE_CONFIG = {
 # ============================================================================
 
 CATALOG_CONFIG = {
-    "catalog": "avalanche_prediction",
-    "schema": "avalanche_data",
+    "catalog": "workspace",
+    "schema": "avalanches_agents",
     "volume": "raw_files"
 }
 
