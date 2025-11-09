@@ -14,7 +14,29 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Configurar Cliente Open-Meteo
+# MAGIC ## 1. Verificar Configuración
+
+# COMMAND ----------
+
+print("🔍 VERIFICANDO CONFIGURACIÓN...")
+print(f"   Catalog: {CATALOG}")
+print(f"   Schema: {SCHEMA}")
+print(f"   Full Database: {FULL_DATABASE}")
+print(f"   Tabla ubicaciones: {TABLE_LOCATIONS}")
+print(f"   Tablas destino: {TABLE_WEATHER_DAILY}, {TABLE_WEATHER_HOURLY}")
+
+# Verificar schema existe
+try:
+    spark.sql(f"USE {FULL_DATABASE}")
+    print(f"✅ Schema '{FULL_DATABASE}' existe y está activo")
+except Exception as e:
+    print(f"❌ ERROR: Schema '{FULL_DATABASE}' no existe: {e}")
+    raise Exception(f"Ejecuta primero: 00_Setup/02_create_unity_catalog.py")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 2. Configurar Cliente Open-Meteo
 
 # COMMAND ----------
 
@@ -38,13 +60,22 @@ print("✅ Cliente Open-Meteo configurado")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Cargar Ubicaciones a Monitorear
+# MAGIC ## 3. Cargar Ubicaciones a Monitorear
 
 # COMMAND ----------
 
 print(f"📍 Cargando ubicaciones desde: {TABLE_LOCATIONS}")
 
+# Verificar que la tabla existe
+if not spark.catalog.tableExists(TABLE_LOCATIONS):
+    raise Exception(f"❌ ERROR: Tabla {TABLE_LOCATIONS} NO EXISTE. Ejecuta primero 00_Setup/02_create_unity_catalog.py")
+
 locations_df = spark.table(TABLE_LOCATIONS)
+count = locations_df.count()
+
+if count == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_LOCATIONS} está VACÍA. No hay ubicaciones para monitorear.")
+
 locations = locations_df.toPandas()
 
 print(f"✅ Ubicaciones cargadas: {len(locations)}")
@@ -238,10 +269,23 @@ else:
 print(f"💾 Guardando datos meteorológicos...")
 
 # Guardar datos diarios
+# Verificar que tenemos datos
+if len(combined_daily) == 0:
+    raise Exception("❌ ERROR: DataFrame de datos diarios está VACÍO. No hay datos meteorológicos para guardar.")
+
+print(f"   Pandas DataFrame: {len(combined_daily):,} registros")
+
 daily_spark_df = spark.createDataFrame(combined_daily)
 daily_spark_df = daily_spark_df.withColumn("ingestion_timestamp", F.current_timestamp())
 
+# Verificar conversión
+daily_count_before = daily_spark_df.count()
+if daily_count_before == 0:
+    raise Exception("❌ ERROR: Spark DataFrame de datos diarios está VACÍO después de conversión")
+
+print(f"   Spark DataFrame: {daily_count_before:,} registros")
 print(f"   Guardando en: {TABLE_WEATHER_DAILY}")
+
 daily_spark_df.write \
     .format("delta") \
     .mode("overwrite") \
@@ -249,22 +293,40 @@ daily_spark_df.write \
     .partitionBy("location_name", "date") \
     .saveAsTable(TABLE_WEATHER_DAILY)
 
-print(f"✅ Datos diarios guardados: {daily_spark_df.count()} registros")
+# Verificar que se guardó correctamente
+daily_count_after = spark.table(TABLE_WEATHER_DAILY).count()
+if daily_count_after == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_WEATHER_DAILY} está VACÍA después de guardar")
+
+print(f"✅ Datos diarios guardados: {daily_count_after} registros")
 
 # Guardar datos horarios (si existen)
 if len(combined_hourly) > 0:
+    print(f"   Pandas DataFrame horarios: {len(combined_hourly):,} registros")
+
     hourly_spark_df = spark.createDataFrame(combined_hourly)
     hourly_spark_df = hourly_spark_df.withColumn("ingestion_timestamp", F.current_timestamp())
 
-    print(f"   Guardando en: {TABLE_WEATHER_HOURLY}")
-    hourly_spark_df.write \
-        .format("delta") \
-        .mode("overwrite") \
-        .option("overwriteSchema", "true") \
-        .partitionBy("location_name", "date") \
-        .saveAsTable(TABLE_WEATHER_HOURLY)
+    # Verificar conversión
+    hourly_count_before = hourly_spark_df.count()
+    if hourly_count_before == 0:
+        print("⚠️  WARNING: Spark DataFrame horario está vacío después de conversión")
+    else:
+        print(f"   Spark DataFrame horarios: {hourly_count_before:,} registros")
+        print(f"   Guardando en: {TABLE_WEATHER_HOURLY}")
 
-    print(f"✅ Datos horarios guardados: {hourly_spark_df.count():,} registros")
+        hourly_spark_df.write \
+            .format("delta") \
+            .mode("overwrite") \
+            .option("overwriteSchema", "true") \
+            .partitionBy("location_name", "date") \
+            .saveAsTable(TABLE_WEATHER_HOURLY)
+
+        # Verificar que se guardó correctamente
+        hourly_count_after = spark.table(TABLE_WEATHER_HOURLY).count()
+        print(f"✅ Datos horarios guardados: {hourly_count_after:,} registros")
+else:
+    print("ℹ️  No hay datos horarios para guardar (solo datos diarios disponibles)")
 
 # COMMAND ----------
 

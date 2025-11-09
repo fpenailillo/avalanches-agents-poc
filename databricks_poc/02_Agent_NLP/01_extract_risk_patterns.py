@@ -15,7 +15,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Importar Librerías NLP
+# MAGIC ## 1. Verificar Configuración
 
 # COMMAND ----------
 
@@ -23,6 +23,30 @@ import re
 import pandas as pd
 from datetime import datetime
 import uuid
+from pyspark.sql import functions as F
+from pyspark.sql.types import *
+
+print("🔍 VERIFICANDO CONFIGURACIÓN...")
+print(f"   Catalog: {CATALOG}")
+print(f"   Schema: {SCHEMA}")
+print(f"   Full Database: {FULL_DATABASE}")
+print(f"   Tabla origen: {TABLE_RELATOS_RAW}")
+print(f"   Tabla destino: {TABLE_NLP_PATTERNS}")
+
+# Verificar schema existe
+try:
+    spark.sql(f"USE {FULL_DATABASE}")
+    print(f"✅ Schema '{FULL_DATABASE}' existe y está activo")
+except Exception as e:
+    print(f"❌ ERROR: Schema '{FULL_DATABASE}' no existe: {e}")
+    raise Exception(f"Ejecuta primero: 00_Setup/02_create_unity_catalog.py")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 2. Importar Librerías NLP
+
+# COMMAND ----------
 
 # NLP
 try:
@@ -32,16 +56,12 @@ try:
 except ImportError:
     print("⚠️  Transformers no disponible - ejecutar notebook de instalación")
 
-# PySpark
-from pyspark.sql import functions as F
-from pyspark.sql.types import *
-
-print("✅ Librerías importadas")
+print("✅ Librerías NLP listas")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Cargar Base de Relatos de AndesHandbook
+# MAGIC ## 3. Cargar Base de Relatos de AndesHandbook
 
 # COMMAND ----------
 

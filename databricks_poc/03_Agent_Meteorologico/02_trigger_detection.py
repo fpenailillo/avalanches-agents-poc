@@ -14,7 +14,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Cargar Datos Meteorológicos
+# MAGIC ## 1. Verificar Configuración
 
 # COMMAND ----------
 
@@ -23,18 +23,46 @@ from pyspark.sql.window import Window
 from datetime import datetime
 import uuid
 
+print("🔍 VERIFICANDO CONFIGURACIÓN...")
+print(f"   Full Database: {FULL_DATABASE}")
+print(f"   Tabla origen: {TABLE_WEATHER_DAILY}")
+print(f"   Tabla destino: {TABLE_WEATHER_TRIGGERS}")
+
+# Verificar schema activo
+try:
+    spark.sql(f"USE {FULL_DATABASE}")
+    print(f"✅ Schema '{FULL_DATABASE}' está activo")
+except Exception as e:
+    print(f"❌ ERROR con schema: {e}")
+    raise
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 2. Cargar Datos Meteorológicos
+
+# COMMAND ----------
+
 print(f"🌦️  Cargando datos desde: {TABLE_WEATHER_DAILY}")
 
-weather_df = spark.table(TABLE_WEATHER_DAILY)
+# Verificar que la tabla existe
+if not spark.catalog.tableExists(TABLE_WEATHER_DAILY):
+    raise Exception(f"❌ ERROR: Tabla {TABLE_WEATHER_DAILY} NO EXISTE. Ejecuta primero 01_weather_ingestion.py")
 
-print(f"✅ Datos cargados: {weather_df.count():,} registros")
+weather_df = spark.table(TABLE_WEATHER_DAILY)
+weather_count = weather_df.count()
+
+if weather_count == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_WEATHER_DAILY} está VACÍA. No hay datos meteorológicos para analizar.")
+
+print(f"✅ Datos cargados: {weather_count:,} registros")
 
 display(weather_df.orderBy(F.desc("date")).limit(10))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Calcular Features Meteorológicos
+# MAGIC ## 3. Calcular Features Meteorológicos
 
 # COMMAND ----------
 
