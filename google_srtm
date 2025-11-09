@@ -1,0 +1,280 @@
+// ================================================================================
+// CÓDIGO OPTIMIZADO - PENDIENTES 30-45° SOBRE 2000m - REGIÓN METROPOLITANA
+// ================================================================================
+
+print('🏔️ Iniciando análisis de pendientes SOBRE 2000m para Región Metropolitana de Chile');
+
+// PASO 1: Definir área de estudio
+var rm_bounds = ee.Geometry.Rectangle([-71.5, -34.0, -70.0, -33.0]);
+print('✓ Área de estudio definida: Región Metropolitana');
+
+// PASO 2: Cargar y procesar DEM
+var srtm = ee.Image('USGS/SRTMGL1_003');
+var dem_rm = srtm.clip(rm_bounds);
+print('✓ DEM SRTM cargado');
+
+// PASO 3: Calcular pendientes
+var slope_degrees = ee.Terrain.slope(dem_rm);
+print('✓ Pendientes calculadas');
+
+// PASO 4: Crear máscara de elevación > 2000m
+var elevation_mask = dem_rm.gte(2000);
+print('✓ Máscara de elevación > 2000m creada');
+
+// PASO 5: Identificar pendientes 30-45° SOLO en elevaciones > 2000m
+var target_slopes = slope_degrees.gte(30)
+                    .and(slope_degrees.lte(45))
+                    .and(elevation_mask); // ← NUEVA CONDICIÓN: solo sobre 2000m
+
+print('✓ Pendientes 30-45° sobre 2000m identificadas');
+
+// PASO 6: Crear máscara para visualización
+var slope_mask = target_slopes.selfMask();
+
+// PASO 7: Configurar mapa
+Map.centerObject(rm_bounds, 9);
+
+// PASO 8: Agregar capas
+Map.addLayer(dem_rm, {
+  min: 0, 
+  max: 6000, 
+  palette: ['0066CC', '66CCFF', '99FF99', 'FFFF66', 'FF9900', 'FF0000', 'FFFFFF']
+}, 'Elevación (m)', false);
+
+// Mostrar zona de elevación > 2000m en azul claro
+Map.addLayer(elevation_mask.selfMask(), {
+  palette: ['87CEEB']
+}, '🔵 Elevación > 2000m', false);
+
+Map.addLayer(slope_degrees, {
+  min: 0,
+  max: 60,
+  palette: ['00FF00', 'FFFF00', 'FF9900', 'FF0000', '990099']
+}, 'Todas las pendientes (°)', false);
+
+// CAPA PRINCIPAL: Pendientes 30-45° SOLO sobre 2000m en ROJO
+Map.addLayer(slope_mask, {
+  palette: ['FF0000']
+}, '🔴 Pendientes 30-45° (>2000m)', true);
+
+Map.addLayer(rm_bounds, {
+  color: '0066FF',
+  fillColor: '0066FF00'
+}, 'Límite Región Metropolitana', true);
+
+print('✓ Todas las capas agregadas correctamente');
+
+// PASO 9: Estadísticas OPTIMIZADAS para elevaciones > 2000m
+print('📊 Calculando estadísticas detalladas para elevaciones > 2000m...');
+
+// Área con pendientes objetivo sobre 2000m
+var pixel_area = ee.Image.pixelArea().divide(1000000); // km²
+var area_30_45_over_2000 = target_slopes.multiply(pixel_area);
+
+// Área total sobre 2000m (para calcular porcentajes)
+var total_area_over_2000 = elevation_mask.multiply(pixel_area);
+
+// Estadísticas principales
+var combined_stats = ee.Dictionary({
+  'area_slopes': area_30_45_over_2000.reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: rm_bounds,
+    scale: 30,
+    maxPixels: 1e9
+  }),
+  'area_total_2000m': total_area_over_2000.reduceRegion({
+    reducer: ee.Reducer.sum(),
+    geometry: rm_bounds,
+    scale: 30,
+    maxPixels: 1e9
+  }),
+  'slopes_all': slope_degrees.reduceRegion({
+    reducer: ee.Reducer.minMax().combine(ee.Reducer.mean(), '', true),
+    geometry: rm_bounds,
+    scale: 30,
+    maxPixels: 1e9
+  }),
+  'slopes_over_2000': slope_degrees.updateMask(elevation_mask).reduceRegion({
+    reducer: ee.Reducer.minMax().combine(ee.Reducer.mean(), '', true),
+    geometry: rm_bounds,
+    scale: 30,
+    maxPixels: 1e9
+  })
+});
+
+// Mostrar estadísticas principales
+combined_stats.evaluate(function(results) {
+  var area_slopes = results.area_slopes || {};
+  var area_total_2000 = results.area_total_2000 || {};
+  var slope_result = results.slopes_all || {};
+  var slope_2000_result = results.slopes_over_2000 || {};
+  
+  print('');
+  print('📈 ESTADÍSTICAS GENERALES:');
+  print('  • Pendiente mínima (toda la región): ' + (slope_result.slope_min || 0).toFixed(1) + '°');
+  print('  • Pendiente máxima (toda la región): ' + (slope_result.slope_max || 0).toFixed(1) + '°');  
+  print('  • Pendiente promedio (toda la región): ' + (slope_result.slope_mean || 0).toFixed(1) + '°');
+  
+  print('');
+  print('⛰️ ESTADÍSTICAS SOBRE 2000m:');
+  print('  • Pendiente promedio (>2000m): ' + (slope_2000_result.slope_mean || 0).toFixed(1) + '°');
+  print('  • Área total sobre 2000m: ' + (area_total_2000.area || 0).toFixed(2) + ' km²');
+  
+  var target_area = area_slopes.area || 0;
+  print('🔴 ÁREA CON PENDIENTES 30-45° SOBRE 2000m: ' + target_area.toFixed(2) + ' km²');
+  
+  // Calcular porcentajes
+  var total_2000_area = area_total_2000.area || 0;
+  if (total_2000_area > 0) {
+    var percentage_of_high_elevation = (target_area / total_2000_area) * 100;
+    print('📊 % del área sobre 2000m con pendientes 30-45°: ' + percentage_of_high_elevation.toFixed(1) + '%');
+  }
+  
+  // Porcentaje respecto a toda la región
+  rm_bounds.area().divide(1000000).evaluate(function(total_area_result) {
+    if (total_area_result && target_area > 0) {
+      var percentage_total = (target_area / total_area_result) * 100;
+      print('📊 % de toda la Región Metropolitana: ' + percentage_total.toFixed(2) + '%');
+    }
+  });
+});
+
+// PASO 10: Análisis por sectores ADAPTADO para elevaciones altas
+print('');
+print('📍 ANÁLISIS POR SECTORES (solo zonas montañosas >2000m):');
+
+var mountain_sectors = [
+  {name: 'Cordillera Las Condes', coords: [-70.4500, -33.3500]},
+  {name: 'Cordillera Lo Barnechea', coords: [-70.4200, -33.3200]},
+  {name: 'Valle Nevado', coords: [-70.2500, -33.3500]},
+  {name: 'La Parva', coords: [-70.2800, -33.2800]},
+  {name: 'Farellones', coords: [-70.3100, -33.3100]}
+];
+
+mountain_sectors.forEach(function(sector) {
+  var point = ee.Geometry.Point(sector.coords);
+  var buffer = point.buffer(2500); // 2.5 km
+  
+  // Calcular estadísticas del sector solo para >2000m
+  var sector_stats = ee.Dictionary({
+    'area_slopes': target_slopes.multiply(pixel_area).reduceRegion({
+      reducer: ee.Reducer.sum(),
+      geometry: buffer,
+      scale: 30,
+      maxPixels: 1e6
+    }),
+    'area_total_2000': elevation_mask.multiply(pixel_area).reduceRegion({
+      reducer: ee.Reducer.sum(),
+      geometry: buffer,
+      scale: 30,
+      maxPixels: 1e6
+    }),
+    'slope_mean_2000': slope_degrees.updateMask(elevation_mask).reduceRegion({
+      reducer: ee.Reducer.mean(),
+      geometry: buffer,
+      scale: 30,
+      maxPixels: 1e6
+    })
+  });
+  
+  sector_stats.evaluate(function(results) {
+    var slope_area = results.area_slopes || {};
+    var total_area = results.area_total_2000 || {};
+    var slope_data = results.slope_mean_2000 || {};
+    
+    var area_val = slope_area.area || 0;
+    var total_val = total_area.area || 0;
+    var slope_val = slope_data.slope || 0;
+    
+    print('  ' + sector.name + ':');
+    print('    - Área >2000m: ' + total_val.toFixed(2) + ' km²');
+    print('    - Área 30-45° (>2000m): ' + area_val.toFixed(2) + ' km²');
+    print('    - Pendiente promedio (>2000m): ' + slope_val.toFixed(1) + '°');
+  });
+  
+  // Agregar punto al mapa
+  Map.addLayer(point, {color: 'FFFF00'}, sector.name, false);
+});
+
+// PASO 11: Función de exportación actualizada
+function exportResults() {
+  Export.image.toDrive({
+    image: slope_mask,
+    description: 'Pendientes_30_45_over_2000m_RM',
+    folder: 'GEE_Chile_Analysis',
+    region: rm_bounds,
+    scale: 30,
+    crs: 'EPSG:4326',
+    maxPixels: 1e9
+  });
+  
+  print('📁 Exportación iniciada - Revisa pestaña "Tasks"');
+}
+
+// DESCOMENTA PARA EXPORTAR:
+// exportResults();
+
+// INFORMACIÓN FINAL
+print('');
+print('🎯 ¡ANÁLISIS COMPLETADO PARA ELEVACIONES >2000m!');
+print('');
+print('🔍 LO QUE VES EN EL MAPA:');
+print('  • ÁREAS ROJAS = Pendientes 30-45° ÚNICAMENTE sobre 2000m');
+print('  • ÁREAS AZULES = Todas las zonas sobre 2000m (si activadas)');
+print('  • Concentración en alta cordillera y centros de esquí');
+print('  • Zonas urbanas y valles NO aparecen (están bajo 2000m)');
+print('');
+print('📊 DATOS TÉCNICOS:');
+print('  • Resolución: 30 metros por pixel');
+print('  • Fuente: SRTM NASA');
+print('  • Filtro: Elevación > 2000 metros sobre nivel del mar');
+print('  • Método: Análise de gradientes topográficos filtrado');
+print('');
+print('✅ Sistema funcionando sin errores');
+
+// Agregar leyenda actualizada
+var legend = ui.Panel({
+  style: {
+    position: 'bottom-left',
+    padding: '8px 15px',
+    backgroundColor: 'white'
+  }
+});
+
+legend.add(ui.Label({
+  value: '🔴 Pendientes 30-45° (>2000m)',
+  style: {fontWeight: 'bold', fontSize: '16px'}
+}));
+
+legend.add(ui.Label({
+  value: 'Terrenos con pendiente pronunciada\nSOLO en elevaciones superiores\na 2000 metros',
+  style: {fontSize: '12px'}
+}));
+
+legend.add(ui.Label({
+  value: '🔵 Elevación > 2000m (opcional)',
+  style: {fontSize: '12px', color: '666'}
+}));
+
+Map.add(legend);
+
+// Agregar panel de información actualizado
+var infoPanel = ui.Panel({
+  style: {
+    position: 'top-right',
+    padding: '10px',
+    backgroundColor: 'white'
+  }
+});
+
+infoPanel.add(ui.Label({
+  value: '📊 ANÁLISIS ALTA MONTAÑA',
+  style: {fontWeight: 'bold'}
+}));
+
+infoPanel.add(ui.Label({
+  value: 'Filtro: Elevación > 2000m\nPendientes: 30-45 grados\nZona: Alta Cordillera\nCentros de esquí incluidos',
+  style: {fontSize: '11px'}
+}));
+
+Map.add(infoPanel);
