@@ -472,13 +472,25 @@ display(nlp_patterns.limit(10))
 
 print(f"💾 Guardando en: {TABLE_NLP_PATTERNS}")
 
+# Verificar que tenemos datos antes de guardar
+nlp_count_before = nlp_patterns.count()
+if nlp_count_before == 0:
+    raise Exception("❌ ERROR: DataFrame de patrones NLP está VACÍO. No hay datos para guardar.")
+
+print(f"   Registros a guardar: {nlp_count_before}")
+
 nlp_patterns.write \
     .format("delta") \
     .mode("overwrite") \
     .option("overwriteSchema", "true") \
     .saveAsTable(TABLE_NLP_PATTERNS)
 
-print(f"✅ Datos guardados: {nlp_patterns.count()} patrones de riesgo")
+# Verificar que se guardó correctamente
+nlp_count_after = spark.table(TABLE_NLP_PATTERNS).count()
+if nlp_count_after == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_NLP_PATTERNS} está VACÍA después de guardar")
+
+print(f"✅ Datos guardados: {nlp_count_after} patrones de riesgo")
 
 # COMMAND ----------
 

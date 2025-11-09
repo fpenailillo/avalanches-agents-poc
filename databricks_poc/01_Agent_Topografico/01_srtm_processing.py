@@ -19,7 +19,29 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Importar Librerías
+# MAGIC ## 1. Verificar Configuración
+
+# COMMAND ----------
+
+print("🔍 VERIFICANDO CONFIGURACIÓN...")
+print(f"   Catalog: {CATALOG}")
+print(f"   Schema: {SCHEMA}")
+print(f"   Full Database: {FULL_DATABASE}")
+print(f"   Tabla destino: {TABLE_TOPO_FEATURES}")
+print(f"   Zona piloto: {PILOT_ZONE['name']}")
+
+# Verificar schema existe
+try:
+    spark.sql(f"USE {FULL_DATABASE}")
+    print(f"✅ Schema '{FULL_DATABASE}' existe y está activo")
+except Exception as e:
+    print(f"❌ ERROR: Schema '{FULL_DATABASE}' no existe: {e}")
+    raise Exception(f"Ejecuta primero: 00_Setup/02_create_unity_catalog.py")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 2. Importar Librerías
 
 # COMMAND ----------
 
@@ -404,8 +426,21 @@ display(topo_features_df.head(10))
 
 print(f"💾 Guardando features topográficos en: {TABLE_TOPO_FEATURES}")
 
+# Verificar que tenemos datos
+if len(topo_features_df) == 0:
+    raise Exception("❌ ERROR: DataFrame de features topográficos está VACÍO. No hay datos para guardar.")
+
+print(f"   DataFrame Pandas: {len(topo_features_df):,} registros")
+
 # Convertir a Spark DataFrame
 topo_spark_df = spark.createDataFrame(topo_features_df)
+
+# Verificar conversión
+record_count = topo_spark_df.count()
+if record_count == 0:
+    raise Exception("❌ ERROR: Spark DataFrame está VACÍO después de conversión")
+
+print(f"   Spark DataFrame: {record_count:,} registros")
 
 # Guardar en Delta Lake
 topo_spark_df.write \
@@ -414,8 +449,13 @@ topo_spark_df.write \
     .option("overwriteSchema", "true") \
     .saveAsTable(TABLE_TOPO_FEATURES)
 
+# Verificar que se guardó correctamente
+saved_count = spark.table(TABLE_TOPO_FEATURES).count()
+if saved_count == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_TOPO_FEATURES} está VACÍA después de guardar")
+
 print(f"✅ Datos guardados en tabla: {TABLE_TOPO_FEATURES}")
-print(f"   Registros: {topo_spark_df.count():,}")
+print(f"   Registros guardados: {saved_count:,}")
 
 # COMMAND ----------
 
