@@ -14,7 +14,7 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Cargar Features Topográficos
+# MAGIC ## 1. Verificar Configuración y Cargar Features
 
 # COMMAND ----------
 
@@ -23,11 +23,32 @@ from pyspark.sql.window import Window
 import uuid
 from datetime import datetime
 
-print(f"📊 Cargando features topográficos desde: {TABLE_TOPO_FEATURES}")
+print("🔍 VERIFICANDO CONFIGURACIÓN...")
+print(f"   Full Database: {FULL_DATABASE}")
+print(f"   Tabla origen: {TABLE_TOPO_FEATURES}")
+print(f"   Tabla destino: {TABLE_TOPO_SUSCEPTIBILITY}")
+
+# Verificar schema activo
+try:
+    spark.sql(f"USE {FULL_DATABASE}")
+    print(f"✅ Schema '{FULL_DATABASE}' está activo")
+except Exception as e:
+    print(f"❌ ERROR con schema: {e}")
+    raise
+
+print(f"\n📊 Cargando features topográficos desde: {TABLE_TOPO_FEATURES}")
+
+# Verificar que la tabla existe
+if not spark.catalog.tableExists(TABLE_TOPO_FEATURES):
+    raise Exception(f"❌ ERROR: Tabla {TABLE_TOPO_FEATURES} NO EXISTE. Ejecuta primero 01_srtm_processing.py")
 
 topo_features = spark.table(TABLE_TOPO_FEATURES)
+count = topo_features.count()
 
-print(f"✅ Features cargados: {topo_features.count():,} registros")
+if count == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_TOPO_FEATURES} está VACÍA. No hay datos para procesar.")
+
+print(f"✅ Features cargados: {count:,} registros")
 
 # Mostrar muestra
 display(topo_features.limit(10))
@@ -132,13 +153,28 @@ display(susceptibility_final.orderBy(F.desc("susceptibility_score")))
 
 print(f"💾 Guardando en: {TABLE_TOPO_SUSCEPTIBILITY}")
 
+# Verificar que tenemos datos antes de guardar
+count_before = susceptibility_final.count()
+if count_before == 0:
+    raise Exception("❌ ERROR: DataFrame de susceptibilidad está VACÍO. No hay datos para guardar.")
+
+print(f"   Registros a guardar: {count_before}")
+
 susceptibility_final.write \
     .format("delta") \
     .mode("overwrite") \
     .option("overwriteSchema", "true") \
     .saveAsTable(TABLE_TOPO_SUSCEPTIBILITY)
 
-print(f"✅ Tabla guardada: {susceptibility_final.count()} registros")
+# Verificar que se guardó correctamente
+count_after = spark.table(TABLE_TOPO_SUSCEPTIBILITY).count()
+if count_after == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_TOPO_SUSCEPTIBILITY} está VACÍA después de guardar")
+
+if count_after != count_before:
+    print(f"⚠️  ADVERTENCIA: Se guardaron {count_after} registros pero se esperaban {count_before}")
+
+print(f"✅ Tabla guardada: {count_after} registros")
 
 # COMMAND ----------
 
@@ -201,13 +237,25 @@ display(
 
 print(f"💾 Guardando mapa en: {TABLE_SUSCEPTIBILITY_MAP}")
 
+# Verificar que tenemos datos antes de guardar
+map_count_before = susceptibility_map_final.count()
+if map_count_before == 0:
+    raise Exception("❌ ERROR: DataFrame del mapa de susceptibilidad está VACÍO. No hay datos para guardar.")
+
+print(f"   Registros a guardar: {map_count_before:,}")
+
 susceptibility_map_final.write \
     .format("delta") \
     .mode("overwrite") \
     .option("overwriteSchema", "true") \
     .saveAsTable(TABLE_SUSCEPTIBILITY_MAP)
 
-print(f"✅ Mapa guardado: {susceptibility_map_final.count():,} píxeles")
+# Verificar que se guardó correctamente
+map_count_after = spark.table(TABLE_SUSCEPTIBILITY_MAP).count()
+if map_count_after == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_SUSCEPTIBILITY_MAP} está VACÍA después de guardar")
+
+print(f"✅ Mapa guardado: {map_count_after:,} píxeles")
 
 # COMMAND ----------
 

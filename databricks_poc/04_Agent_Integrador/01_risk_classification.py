@@ -444,6 +444,13 @@ display(predictions.orderBy(F.desc("risk_score")))
 
 print(f"💾 Guardando predicciones en: {TABLE_RISK_PREDICTIONS}")
 
+# Verificar que tenemos datos antes de guardar
+pred_count_before = predictions.count()
+if pred_count_before == 0:
+    raise Exception("❌ ERROR: DataFrame de predicciones está VACÍO. No hay datos para guardar.")
+
+print(f"   Registros a guardar: {pred_count_before}")
+
 predictions.write \
     .format("delta") \
     .mode("append") \
@@ -451,7 +458,12 @@ predictions.write \
     .partitionBy("zone_name", "forecast_date") \
     .saveAsTable(TABLE_RISK_PREDICTIONS)
 
-print(f"✅ Predicciones guardadas: {predictions.count()} registros")
+# Verificar que se guardó correctamente
+pred_count_after = spark.table(TABLE_RISK_PREDICTIONS).count()
+if pred_count_after == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_RISK_PREDICTIONS} está VACÍA después de guardar")
+
+print(f"✅ Predicciones guardadas: {pred_count_after} registros (nuevos: {pred_count_before})")
 
 # COMMAND ----------
 

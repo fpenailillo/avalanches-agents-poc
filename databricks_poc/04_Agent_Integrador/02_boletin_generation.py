@@ -469,6 +469,13 @@ display(bulletin_df.select(
 
 print(f"💾 Guardando boletín en: {TABLE_BOLETINES}")
 
+# Verificar que tenemos datos antes de guardar
+bulletin_count_before = bulletin_df.count()
+if bulletin_count_before == 0:
+    raise Exception("❌ ERROR: DataFrame de boletín está VACÍO. No hay datos para guardar.")
+
+print(f"   Registros a guardar: {bulletin_count_before}")
+
 bulletin_df.write \
     .format("delta") \
     .mode("append") \
@@ -476,7 +483,12 @@ bulletin_df.write \
     .partitionBy("zone_name", "issue_date") \
     .saveAsTable(TABLE_BOLETINES)
 
-print(f"✅ Boletín guardado exitosamente")
+# Verificar que se guardó correctamente
+bulletin_count_after = spark.table(TABLE_BOLETINES).count()
+if bulletin_count_after == 0:
+    raise Exception(f"❌ ERROR: Tabla {TABLE_BOLETINES} está VACÍA después de guardar")
+
+print(f"✅ Boletín guardado exitosamente ({bulletin_count_after} total en tabla)")
 
 # COMMAND ----------
 

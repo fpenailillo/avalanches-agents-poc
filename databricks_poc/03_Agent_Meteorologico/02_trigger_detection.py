@@ -241,6 +241,13 @@ else:
 if all_triggers:
     print(f"💾 Guardando triggers en: {TABLE_WEATHER_TRIGGERS}")
 
+    # Verificar que tenemos datos antes de guardar
+    triggers_count_before = triggers_final.count()
+    if triggers_count_before == 0:
+        raise Exception("❌ ERROR: DataFrame de triggers meteorológicos está VACÍO. No hay datos para guardar.")
+
+    print(f"   Registros a guardar: {triggers_count_before}")
+
     triggers_final.write \
         .format("delta") \
         .mode("overwrite") \
@@ -248,7 +255,12 @@ if all_triggers:
         .partitionBy("location_name", "date") \
         .saveAsTable(TABLE_WEATHER_TRIGGERS)
 
-    print(f"✅ Triggers guardados: {triggers_final.count()} registros")
+    # Verificar que se guardó correctamente
+    triggers_count_after = spark.table(TABLE_WEATHER_TRIGGERS).count()
+    if triggers_count_after == 0:
+        raise Exception(f"❌ ERROR: Tabla {TABLE_WEATHER_TRIGGERS} está VACÍA después de guardar")
+
+    print(f"✅ Triggers guardados: {triggers_count_after} registros")
 
 # COMMAND ----------
 
