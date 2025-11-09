@@ -44,7 +44,30 @@ print("=" * 80)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Función de Logging
+# MAGIC ## 2. Verificación Inicial
+
+# COMMAND ----------
+
+print("🔍 VERIFICANDO ENTORNO...")
+
+# Verificar que existe el schema
+try:
+    spark.sql(f"USE {FULL_DATABASE}")
+    print(f"✅ Schema encontrado: {FULL_DATABASE}")
+except Exception as e:
+    print(f"\n❌ ERROR: Schema '{FULL_DATABASE}' no existe")
+    print(f"\n🛠️  SOLUCIÓN:")
+    print(f"   1. Ejecuta primero: %run 00_Setup/02_create_unity_catalog.py")
+    print(f"   2. Luego vuelve a ejecutar este orquestador")
+    print("\n" + "="*80)
+    raise Exception(f"Schema {FULL_DATABASE} no existe. Ejecuta el setup primero.")
+
+print("✅ Entorno verificado\n")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 3. Función de Logging
 
 # COMMAND ----------
 
@@ -343,37 +366,46 @@ print("\n📈 ESTADÍSTICAS DEL SISTEMA")
 print("=" * 80)
 
 try:
-    # Última predicción
-    last_prediction = spark.table(TABLE_RISK_PREDICTIONS) \
-        .orderBy(F.desc("prediction_timestamp")) \
-        .first()
+    # Verificar si la tabla existe antes de consultarla
+    tables_exist = spark.catalog.tableExists(TABLE_RISK_PREDICTIONS)
 
-    if last_prediction:
-        print(f"\n🎯 ÚLTIMA PREDICCIÓN:")
-        print(f"   Zona: {last_prediction['zone_name']}")
-        print(f"   Fecha pronóstico: {last_prediction['forecast_date']}")
-        print(f"   Nivel EAWS: {last_prediction['eaws_level']} - {last_prediction['eaws_label']}")
-        print(f"   Score de riesgo: {last_prediction['risk_score']:.3f}")
-        print(f"   Confianza: {last_prediction['confidence']:.1%}")
-
-        # Factores principales
-        print(f"\n   Factores principales:")
-        for factor in last_prediction['main_factors']:
-            print(f"      • {factor}")
-
-    # Último boletín
-    if PIPELINE_CONFIG["generate_bulletin"]:
-        last_bulletin = spark.table(TABLE_BOLETINES) \
-            .orderBy(F.desc("creation_timestamp")) \
+    if not tables_exist:
+        print("\n⚠️  Tablas de predicción aún no creadas")
+        print("   → Los agentes generarán las tablas durante la ejecución")
+    else:
+        # Última predicción
+        last_prediction = spark.table(TABLE_RISK_PREDICTIONS) \
+            .orderBy(F.desc("prediction_timestamp")) \
             .first()
 
-        if last_bulletin:
-            print(f"\n📝 ÚLTIMO BOLETÍN:")
-            print(f"   ID: {last_bulletin['boletin_id']}")
-            print(f"   Fecha emisión: {last_bulletin['issue_date']}")
-            print(f"   Válido: {last_bulletin['valid_from']} a {last_bulletin['valid_to']}")
-            print(f"   Nivel: {last_bulletin['eaws_level']} - {last_bulletin['eaws_label']}")
-            print(f"   Generado por: {last_bulletin['generated_by']}")
+        if last_prediction:
+            print(f"\n🎯 ÚLTIMA PREDICCIÓN:")
+            print(f"   Zona: {last_prediction['zone_name']}")
+            print(f"   Fecha pronóstico: {last_prediction['forecast_date']}")
+            print(f"   Nivel EAWS: {last_prediction['eaws_level']} - {last_prediction['eaws_label']}")
+            print(f"   Score de riesgo: {last_prediction['risk_score']:.3f}")
+            print(f"   Confianza: {last_prediction['confidence']:.1%}")
+
+            # Factores principales
+            print(f"\n   Factores principales:")
+            for factor in last_prediction['main_factors']:
+                print(f"      • {factor}")
+
+        # Último boletín
+        if PIPELINE_CONFIG["generate_bulletin"]:
+            bulletins_exist = spark.catalog.tableExists(TABLE_BOLETINES)
+            if bulletins_exist:
+                last_bulletin = spark.table(TABLE_BOLETINES) \
+                    .orderBy(F.desc("creation_timestamp")) \
+                    .first()
+
+                if last_bulletin:
+                    print(f"\n📝 ÚLTIMO BOLETÍN:")
+                    print(f"   ID: {last_bulletin['boletin_id']}")
+                    print(f"   Fecha emisión: {last_bulletin['issue_date']}")
+                    print(f"   Válido: {last_bulletin['valid_from']} a {last_bulletin['valid_to']}")
+                    print(f"   Nivel: {last_bulletin['eaws_level']} - {last_bulletin['eaws_label']}")
+                    print(f"   Generado por: {last_bulletin['generated_by']}")
 
 except Exception as e:
     print(f"⚠️  No se pudieron obtener estadísticas: {e}")
