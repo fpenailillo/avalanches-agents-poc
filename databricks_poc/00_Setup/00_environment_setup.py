@@ -19,8 +19,8 @@ from datetime import datetime
 # COMMAND ----------
 
 # Configuración de Unity Catalog
-CATALOG = "avalanche_prediction"
-SCHEMA = "avalanche_data"
+CATALOG = "workspace"
+SCHEMA = "avalanches_agents"
 VOLUME = "raw_files"
 
 # Nombres completos

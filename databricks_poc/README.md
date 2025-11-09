@@ -231,9 +231,9 @@ Ejecutar:
 Deberías ver:
 ```
 ✅ UNITY CATALOG:
-   Catálogo: avalanche_prediction
-   Schema: avalanche_data
-   Database completo: avalanche_prediction.avalanche_data
+   Catálogo: workspace
+   Schema: avalanches_agents
+   Database completo: workspace.avalanches_agents
 
 ✅ ZONA PILOTO:
    Nombre: La Parva
@@ -282,12 +282,12 @@ Este notebook:
 
 ```python
 # Cargar última predicción
-predictions = spark.table("avalanche_prediction.avalanche_data.avalanche_predictions")
+predictions = spark.table("workspace.avalanches_agents.avalanche_predictions")
 latest = predictions.orderBy(F.desc("forecast_date")).limit(1)
 display(latest)
 
 # Cargar último boletín
-bulletins = spark.table("avalanche_prediction.avalanche_data.avalanche_bulletins")
+bulletins = spark.table("workspace.avalanches_agents.avalanche_bulletins")
 latest_bulletin = bulletins.orderBy(F.desc("issue_date")).limit(1)
 display(latest_bulletin)
 ```
