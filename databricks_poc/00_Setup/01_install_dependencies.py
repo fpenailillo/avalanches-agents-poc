@@ -24,21 +24,44 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Procesamiento Geoespacial
+# MAGIC ## 2. Procesamiento Geoespacial (OPCIONAL)
+# MAGIC
+# MAGIC **NOTA:** Estas librerías son opcionales. El POC funciona sin ellas usando DEM sintético.
+# MAGIC Si la instalación falla, puedes omitir este paso.
 
 # COMMAND ----------
 
-# MAGIC %pip install rasterio==1.3.9
-# MAGIC %pip install GDAL==3.4.1
-# MAGIC %pip install shapely==2.0.2
-# MAGIC %pip install geopandas==0.14.1
-# MAGIC %pip install pyproj==3.6.1
-# MAGIC %pip install fiona==1.9.5
+# Instalar librerías geoespaciales (pueden fallar en algunos entornos)
+print("⚠️  Instalando librerías geoespaciales (OPCIONAL)...")
+print("   Si alguna falla, el POC seguirá funcionando con DEM sintético.\n")
+
+try:
+    %pip install --quiet shapely>=2.0.0
+    print("✅ shapely instalado")
+except:
+    print("⚠️  shapely falló (opcional)")
+
+try:
+    %pip install --quiet pyproj>=3.6.0
+    print("✅ pyproj instalado")
+except:
+    print("⚠️  pyproj falló (opcional)")
+
+try:
+    %pip install --quiet geopandas>=0.14.0
+    print("✅ geopandas instalado")
+except:
+    print("⚠️  geopandas falló (opcional)")
+
+print("\n⚠️  NOTA: rasterio/GDAL NO son necesarios - el POC usa DEM sintético")
+print("   El sistema funcionará correctamente sin estas librerías.\n")
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Google Earth Engine (opcional - requiere autenticación)
+# MAGIC ## 3. Google Earth Engine (OPCIONAL - requiere autenticación)
+# MAGIC
+# MAGIC **NOTA:** Opcional. El POC funciona sin GEE usando DEM sintético.
 
 # COMMAND ----------
 
@@ -134,20 +157,26 @@ print("VERIFICANDO INSTALACIÓN DE DEPENDENCIAS")
 print("="*70)
 
 # Diccionario de librerías a verificar
+# CRÍTICAS: necesarias para el POC
+# OPCIONALES: el POC funciona sin ellas
 libraries_to_check = {
-    "Procesamiento Geoespacial": ["rasterio", "gdal", "shapely", "geopandas"],
-    "APIs Meteorológicas": ["openmeteo_requests", "requests_cache", "retry_requests"],
-    "NLP y ML": ["transformers", "torch", "sentence_transformers", "sklearn"],
-    "LLM": ["openai"],
-    "Análisis de Redes": ["networkx"],
-    "Visualización": ["plotly", "matplotlib", "seaborn", "folium"],
-    "Google Earth Engine": ["ee"]
+    "APIs Meteorológicas (CRÍTICAS)": ["openmeteo_requests", "requests_cache", "retry_requests"],
+    "NLP y ML (CRÍTICAS)": ["transformers", "torch", "sentence_transformers", "sklearn"],
+    "LLM (CRÍTICA)": ["openai"],
+    "Análisis de Redes (CRÍTICA)": ["networkx"],
+    "Visualización (CRÍTICAS)": ["plotly", "matplotlib", "seaborn"],
+    "Procesamiento Geoespacial (OPCIONAL)": ["shapely", "geopandas"],
+    "Google Earth Engine (OPCIONAL)": ["ee"]
 }
 
 # Verificar cada categoría
-all_ok = True
+critical_ok = True
+optional_missing = []
+
 for category, libs in libraries_to_check.items():
+    is_critical = "CRÍTICA" in category
     print(f"\n📦 {category}:")
+
     for lib in libs:
         try:
             if lib == "gdal":
@@ -163,13 +192,20 @@ for category, libs in libraries_to_check.items():
             print(f"   ✅ {lib:25s} → {version}")
         except ImportError as e:
             print(f"   ❌ {lib:25s} → NOT INSTALLED")
-            all_ok = False
+            if is_critical:
+                critical_ok = False
+            else:
+                optional_missing.append(lib)
 
 print("\n" + "="*70)
-if all_ok:
-    print("✅ TODAS LAS DEPENDENCIAS INSTALADAS CORRECTAMENTE")
+if critical_ok:
+    print("✅ TODAS LAS DEPENDENCIAS CRÍTICAS INSTALADAS CORRECTAMENTE")
+    if optional_missing:
+        print(f"⚠️  Dependencias opcionales faltantes: {', '.join(optional_missing)}")
+        print("   → El POC funcionará correctamente usando alternativas sintéticas")
 else:
-    print("⚠️  ALGUNAS DEPENDENCIAS FALTANTES (revisa arriba)")
+    print("❌ ALGUNAS DEPENDENCIAS CRÍTICAS FALTANTES")
+    print("   → Ejecuta este notebook nuevamente o instala manualmente")
 print("="*70)
 
 # COMMAND ----------
@@ -181,51 +217,79 @@ print("="*70)
 
 print("🧪 PRUEBA DE IMPORTACIONES CRÍTICAS\n")
 
+critical_imports_ok = True
+
+# Geoespacial (OPCIONAL)
 try:
-    # Geoespacial
     import rasterio
     from osgeo import gdal
     import geopandas as gpd
-    print("✅ Módulos geoespaciales OK")
+    print("✅ Módulos geoespaciales OK (opcional)")
+except Exception as e:
+    print("⚠️  Módulos geoespaciales NO disponibles (opcional - se usará DEM sintético)")
 
-    # Weather
+# Weather (CRÍTICO)
+try:
     import openmeteo_requests
     import requests_cache
     from retry_requests import retry
     print("✅ APIs meteorológicas OK")
+except Exception as e:
+    print(f"❌ APIs meteorológicas FALLARON: {e}")
+    critical_imports_ok = False
 
-    # NLP
+# NLP (CRÍTICO)
+try:
     from transformers import AutoTokenizer, AutoModel, pipeline
     import torch
     from sentence_transformers import SentenceTransformer
     print("✅ Modelos NLP OK")
+except Exception as e:
+    print(f"❌ Modelos NLP FALLARON: {e}")
+    critical_imports_ok = False
 
-    # LLM
+# LLM (CRÍTICO)
+try:
     from openai import OpenAI
     print("✅ LLM integration OK")
+except Exception as e:
+    print(f"❌ LLM integration FALLÓ: {e}")
+    critical_imports_ok = False
 
-    # Networks
+# Networks (CRÍTICO)
+try:
     import networkx as nx
     print("✅ NetworkX OK")
+except Exception as e:
+    print(f"❌ NetworkX FALLÓ: {e}")
+    critical_imports_ok = False
 
-    # Visualization
+# Visualization (CRÍTICO)
+try:
     import plotly.graph_objects as go
     import matplotlib.pyplot as plt
     import seaborn as sns
     import folium
     print("✅ Visualización OK")
+except Exception as e:
+    print(f"❌ Visualización FALLÓ: {e}")
+    critical_imports_ok = False
 
-    # PySpark (ya viene con Databricks)
+# PySpark (ya viene con Databricks)
+try:
     from pyspark.sql import functions as F
     from pyspark.sql.types import *
     print("✅ PySpark OK")
+except Exception as e:
+    print(f"❌ PySpark FALLÓ: {e}")
+    critical_imports_ok = False
 
+if critical_imports_ok:
     print("\n🎉 TODAS LAS IMPORTACIONES CRÍTICAS EXITOSAS")
     print("   → El entorno está listo para ejecutar el POC")
-
-except Exception as e:
-    print(f"\n❌ ERROR EN IMPORTACIONES: {e}")
-    print("   → Revisa la instalación de dependencias")
+else:
+    print("\n❌ ERROR: Algunas importaciones críticas fallaron")
+    print("   → Revisa la instalación de dependencias y ejecuta este notebook nuevamente")
 
 # COMMAND ----------
 
@@ -270,8 +334,7 @@ print("\n" + "="*70)
 print("📋 RESUMEN DE INSTALACIÓN")
 print("="*70)
 print("""
-✅ INSTALADO:
-   • Procesamiento geoespacial (GDAL, Rasterio, GeoPandas)
+✅ DEPENDENCIAS CRÍTICAS INSTALADAS:
    • APIs meteorológicas (Open-Meteo)
    • Modelos NLP (Transformers, Sentence-Transformers)
    • LLM Integration (OpenAI SDK para Databricks)
@@ -279,18 +342,23 @@ print("""
    • Visualización (Plotly, Matplotlib, Folium)
    • PySpark (nativo en Databricks)
 
+⚠️  DEPENDENCIAS OPCIONALES:
+   • Procesamiento geoespacial (GDAL, Rasterio, GeoPandas)
+     → Si no están instaladas, el POC usa DEM sintético
+   • Google Earth Engine (requiere autenticación adicional)
+     → Si no está configurado, el POC usa DEM sintético
+
 📝 PRÓXIMOS PASOS:
    1. Ejecutar: 00_environment_setup.py
    2. Ejecutar: 02_create_unity_catalog.py
-   3. Iniciar ingesta de datos con cada agente
+   3. Ejecutar: 05_Pipeline/01_orchestrator.py
 
-⚠️  NOTAS IMPORTANTES:
-   • Google Earth Engine requiere autenticación adicional
-   • Para Databricks Community Edition, algunas librerías pueden tener limitaciones
-   • El POC está diseñado para funcionar con datos precargados si APIs fallan
+💡 MODO DE FUNCIONAMIENTO:
+   • El POC funciona completamente con o sin librerías geoespaciales
+   • Usa DEM sintético realista cuando GEE/rasterio no están disponibles
+   • Todas las APIs tienen fallbacks a datos sintéticos
 
 🔗 DOCUMENTACIÓN:
-   • Rasterio: https://rasterio.readthedocs.io
    • Transformers: https://huggingface.co/docs/transformers
    • Open-Meteo: https://open-meteo.com/en/docs
    • NetworkX: https://networkx.org/documentation/stable/
