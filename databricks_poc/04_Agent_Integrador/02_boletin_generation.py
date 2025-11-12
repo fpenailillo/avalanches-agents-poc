@@ -44,6 +44,10 @@ display(latest_predictions.orderBy(F.desc("risk_score")))
 
 # COMMAND ----------
 
+pip install OpenAI
+
+# COMMAND ----------
+
 try:
     from openai import OpenAI
 
@@ -391,14 +395,16 @@ all_factors = []
 for p in predictions_data:
     all_factors.extend(p['main_factors'])
 
-if any('nevada' in f.lower() or 'nieve' in f.lower() for f in all_factors):
+if any('nevada' in f.lower() or 'nieve reciente' in f.lower() for f in all_factors):
     avalanche_problems.append("Nieve reciente")
 if any('viento' in f.lower() for f in all_factors):
     avalanche_problems.append("Placas de viento")
-if any('térmica' in f.lower() or 'temperatura' in f.lower() for f in all_factors):
+if any('térmica' in f.lower() or 'temperatura' in f.lower() or 'fluctuación' in f.lower() for f in all_factors):
     avalanche_problems.append("Nieve húmeda")
 if any('pendiente' in f.lower() for f in all_factors):
     avalanche_problems.append("Terreno crítico")
+if not avalanche_problems:
+    avalanche_problems.append("Condiciones estables")
 
 # Elevaciones afectadas
 high_risk_bands = [p['elevation_band'] for p in predictions_data if p['eaws_level'] >= 3]
@@ -412,7 +418,7 @@ summary = f"Nivel {max_level} - {max_label} para {PILOT_ZONE['name']}. " + \
 danger_desc = EAWS_SCALE[max_level]['description']
 
 # Recomendaciones
-recommendations = EAWS_SCALE[max_level]['recommendations']
+recommendations = EAWS_SCALE[max_level].get('recommendations', 'No recommendations available')
 
 print("✅ Metadatos extraídos")
 
@@ -467,23 +473,27 @@ display(bulletin_df.select(
 
 # COMMAND ----------
 
-print(f"💾 Guardando boletín en: {TABLE_BOLETINES}")
+print(TABLE_BOLETINES)
 
-# Verificar que tenemos datos antes de guardar
-bulletin_count_before = bulletin_df.count()
-if bulletin_count_before == 0:
-    raise Exception("❌ ERROR: DataFrame de boletín está VACÍO. No hay datos para guardar.")
+# COMMAND ----------
 
-print(f"   Registros a guardar: {bulletin_count_before}")
+# Ensure only one eaws_level column and cast to StringType
+from pyspark.sql.types import StringType
+
+# Cast eaws_level to StringType for consistency
+bulletin_df = bulletin_df.withColumn(
+    "eaws_level",
+    bulletin_df["eaws_level"].cast(StringType())
+)
 
 bulletin_df.write \
     .format("delta") \
-    .mode("append") \
+    .mode("overwrite") \
     .option("mergeSchema", "true") \
     .partitionBy("zone_name", "issue_date") \
     .saveAsTable(TABLE_BOLETINES)
 
-# Verificar que se guardó correctamente
+# Verify table is not empty
 bulletin_count_after = spark.table(TABLE_BOLETINES).count()
 if bulletin_count_after == 0:
     raise Exception(f"❌ ERROR: Tabla {TABLE_BOLETINES} está VACÍA después de guardar")

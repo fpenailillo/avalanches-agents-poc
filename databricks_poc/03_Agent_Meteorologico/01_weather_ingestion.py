@@ -40,6 +40,10 @@ except Exception as e:
 
 # COMMAND ----------
 
+# MAGIC %pip install openmeteo_requests requests_cache retry_requests
+
+# COMMAND ----------
+
 import openmeteo_requests
 import requests_cache
 from retry_requests import retry
