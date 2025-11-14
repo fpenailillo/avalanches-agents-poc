@@ -267,3 +267,85 @@ print("   → Usa: %run ../00_Setup/00_environment_setup")
 print("   → Todas las variables globales están disponibles")
 print(f"   → Database: {FULL_DATABASE}")
 print(f"   → Zona piloto: {PILOT_ZONE['name']}\n")
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 11. Configuración Modo Histórico
+
+# COMMAND ----------
+
+from datetime import timedelta
+
+# Modo de operación del sistema
+OPERATION_MODE = "forecast"  # "forecast" o "historical"
+
+# Fecha objetivo para modo histórico
+HISTORICAL_TARGET_DATE = None  # datetime.date object
+
+def set_operation_mode(mode, target_date=None):
+    """
+    Configura modo de operación del sistema
+
+    Args:
+        mode: "forecast" | "historical"
+        target_date: datetime.date object (requerido si mode="historical")
+
+    Raises:
+        ValueError: Si parámetros inválidos
+    """
+    global OPERATION_MODE, HISTORICAL_TARGET_DATE
+
+    if mode not in ["forecast", "historical"]:
+        raise ValueError("Modo debe ser 'forecast' o 'historical'")
+
+    OPERATION_MODE = mode
+
+    if mode == "historical":
+        if target_date is None:
+            raise ValueError("target_date requerido en modo histórico")
+
+        if isinstance(target_date, str):
+            target_date = datetime.strptime(target_date, "%Y-%m-%d").date()
+
+        HISTORICAL_TARGET_DATE = target_date
+        print(f"🕐 MODO HISTÓRICO ACTIVADO")
+        print(f"📅 Fecha objetivo: {target_date}")
+    else:
+        HISTORICAL_TARGET_DATE = None
+        print(f"🔴 MODO TIEMPO REAL ACTIVADO")
+        print(f"📅 Fecha: {datetime.now().date()}")
+
+def get_target_date():
+    """
+    Retorna fecha objetivo según modo de operación
+
+    Returns:
+        datetime.date: Fecha objetivo
+    """
+    if OPERATION_MODE == "historical":
+        return HISTORICAL_TARGET_DATE
+    else:
+        return datetime.now().date()
+
+def get_weather_date_range():
+    """
+    Retorna rango de fechas para datos meteorológicos
+
+    Returns:
+        tuple: (start_date, end_date) como datetime.date objects
+    """
+    target = get_target_date()
+
+    if OPERATION_MODE == "historical":
+        # Análisis histórico: 7 días antes de target_date
+        start_date = target - timedelta(days=7)
+        end_date = target
+    else:
+        # Pronóstico: hoy + 16 días
+        start_date = target
+        end_date = target + timedelta(days=16)
+
+    return start_date, end_date
+
+print("✅ Funciones de modo histórico cargadas")
