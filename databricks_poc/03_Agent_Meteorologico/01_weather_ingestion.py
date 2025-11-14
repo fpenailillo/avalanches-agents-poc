@@ -112,9 +112,10 @@ def fetch_weather_data(latitude, longitude, days=16):
     mode = OPERATION_MODE
     start_date, end_date = get_weather_date_range()
 
-    print(f"🌦️  Obteniendo datos meteorológicos...")
-    print(f"   Modo: {mode.upper()}")
-    print(f"   Rango: {start_date} a {end_date}")
+    print(f"\n🌦️  OBTENIENDO DATOS METEOROLÓGICOS")
+    print(f"   Modo de operación: {mode.upper()}")
+    print(f"   Rango de fechas: {start_date} → {end_date}")
+    print(f"   Ubicación: ({latitude:.4f}, {longitude:.4f})")
 
     # Variables meteorológicas comunes
     daily_variables_list = [
@@ -157,6 +158,7 @@ def fetch_weather_data(latitude, longitude, days=16):
 
         # API de archivo histórico
         url = "https://archive-api.open-meteo.com/v1/archive"
+        print(f"   API: {url} (datos históricos observados)")
 
         params = {
             "latitude": latitude,
@@ -171,6 +173,7 @@ def fetch_weather_data(latitude, longitude, days=16):
     else:  # mode == "forecast"
         # API de pronóstico (código actual)
         url = OPEN_METEO_URL  # https://api.open-meteo.com/v1/forecast
+        print(f"   API: {url} (pronóstico)")
 
         # Agregar variables específicas de pronóstico
         daily_variables_forecast = daily_variables_list + [
@@ -246,7 +249,10 @@ def fetch_weather_data(latitude, longitude, days=16):
 
         hourly_df = pd.DataFrame(data=hourly_data)
 
-        print(f"   ✅ Datos obtenidos exitosamente ({mode} mode)")
+        print(f"   ✅ Datos obtenidos exitosamente")
+        print(f"      • Registros diarios: {len(daily_df)}")
+        print(f"      • Registros horarios: {len(hourly_df)}")
+        print(f"      • Fuente: Open-Meteo {mode.capitalize()} API\n")
 
         return daily_df, hourly_df
 
