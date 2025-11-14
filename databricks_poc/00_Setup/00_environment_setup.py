@@ -278,10 +278,17 @@ print(f"   → Zona piloto: {PILOT_ZONE['name']}\n")
 from datetime import timedelta
 
 # Modo de operación del sistema
-OPERATION_MODE = "forecast"  # "forecast" o "historical"
+# Solo inicializar si no existe (para evitar resetear cuando se hace %run múltiples veces)
+try:
+    OPERATION_MODE
+except NameError:
+    OPERATION_MODE = "forecast"  # "forecast" o "historical"
 
 # Fecha objetivo para modo histórico
-HISTORICAL_TARGET_DATE = None  # datetime.date object
+try:
+    HISTORICAL_TARGET_DATE
+except NameError:
+    HISTORICAL_TARGET_DATE = None  # datetime.date object
 
 def set_operation_mode(mode, target_date=None):
     """
@@ -349,3 +356,9 @@ def get_weather_date_range():
     return start_date, end_date
 
 print("✅ Funciones de modo histórico cargadas")
+
+# Mostrar modo actual si ya está configurado
+if OPERATION_MODE == "historical" and HISTORICAL_TARGET_DATE is not None:
+    print(f"   ℹ️  Modo actual preservado: {OPERATION_MODE.upper()} - Fecha: {HISTORICAL_TARGET_DATE}")
+elif OPERATION_MODE == "forecast":
+    print(f"   ℹ️  Modo actual: {OPERATION_MODE.upper()}")

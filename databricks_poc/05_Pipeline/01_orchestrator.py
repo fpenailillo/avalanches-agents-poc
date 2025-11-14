@@ -72,10 +72,19 @@ if operation_mode == "historical":
     max_date = datetime.now().date() - timedelta(days=2)
 
     if target_date < min_date:
-        raise ValueError(f"❌ Fecha muy antigua. Mínimo: {min_date}")
+        raise ValueError(
+            f"❌ Fecha muy antigua: {target_date}\n"
+            f"   Mínimo permitido: {min_date}\n"
+            f"   Los datos históricos de Open-Meteo están disponibles desde 2020"
+        )
 
     if target_date > max_date:
-        raise ValueError(f"❌ Fecha muy reciente. Máximo: {max_date}")
+        raise ValueError(
+            f"❌ Fecha muy reciente: {target_date}\n"
+            f"   Máximo permitido: {max_date}\n"
+            f"   Los datos históricos tienen 2 días de latencia\n"
+            f"   Para fechas recientes, usa modo 'forecast'"
+        )
 
     # Configurar sistema en modo histórico
     set_operation_mode("historical", target_date)
