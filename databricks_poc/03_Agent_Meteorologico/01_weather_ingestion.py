@@ -48,7 +48,7 @@ import openmeteo_requests
 import requests_cache
 from retry_requests import retry
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 from pyspark.sql import functions as F
 
 # Configurar cliente con cache en memoria
@@ -94,51 +94,98 @@ display(locations)
 
 def fetch_weather_data(latitude, longitude, days=16):
     """
-    Obtiene datos meteorológicos de Open-Meteo para predicción de avalanchas.
+    Obtiene datos meteorológicos según modo de operación
+
+    MODO FORECAST: Próximos 16 días (pronóstico)
+    MODO HISTORICAL: 7 días antes de target_date (datos reales)
 
     Args:
         latitude: Latitud
         longitude: Longitud
-        days: Días de pronóstico (default 16)
+        days: Días de pronóstico (default 16, ignorado en modo histórico)
 
     Returns:
         Tuple (daily_df, hourly_df) con DataFrames de pandas
     """
-    url = OPEN_METEO_URL
 
-    params = {
-        "latitude": latitude,
-        "longitude": longitude,
-        "timezone": OPEN_METEO_TIMEZONE,
-        "forecast_days": days,
-        "daily": [
-            "temperature_2m_max",
-            "temperature_2m_min",
-            "temperature_2m_mean",
-            "precipitation_sum",
-            "precipitation_hours",
+    # Detectar modo de operación
+    mode = OPERATION_MODE
+    start_date, end_date = get_weather_date_range()
+
+    print(f"🌦️  Obteniendo datos meteorológicos...")
+    print(f"   Modo: {mode.upper()}")
+    print(f"   Rango: {start_date} a {end_date}")
+
+    # Variables meteorológicas comunes
+    daily_variables_list = [
+        "temperature_2m_max",
+        "temperature_2m_min",
+        "temperature_2m_mean",
+        "precipitation_sum",
+        "precipitation_hours",
+        "snowfall_sum",
+        "windspeed_10m_max",
+        "windgusts_10m_max",
+        "winddirection_10m_dominant",
+        "shortwave_radiation_sum"
+    ]
+
+    hourly_variables_list = [
+        "temperature_2m",
+        "precipitation",
+        "snowfall",
+        "snow_depth",
+        "weathercode",
+        "cloudcover",
+        "windspeed_10m",
+        "winddirection_10m",
+        "windgusts_10m",
+        "surface_pressure",
+        "relativehumidity_2m"
+    ]
+
+    if mode == "historical":
+        # Validar fecha histórica
+        min_historical_date = datetime(2020, 1, 1).date()
+        max_historical_date = datetime.now().date() - timedelta(days=2)
+
+        if start_date < min_historical_date:
+            raise ValueError(f"Fecha muy antigua. Mínimo: {min_historical_date}")
+
+        if end_date > max_historical_date:
+            raise ValueError(f"Datos históricos no disponibles aún. Máximo: {max_historical_date}")
+
+        # API de archivo histórico
+        url = "https://archive-api.open-meteo.com/v1/archive"
+
+        params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "start_date": start_date.strftime("%Y-%m-%d"),
+            "end_date": end_date.strftime("%Y-%m-%d"),
+            "timezone": OPEN_METEO_TIMEZONE,
+            "daily": daily_variables_list,
+            "hourly": hourly_variables_list
+        }
+
+    else:  # mode == "forecast"
+        # API de pronóstico (código actual)
+        url = OPEN_METEO_URL  # https://api.open-meteo.com/v1/forecast
+
+        # Agregar variables específicas de pronóstico
+        daily_variables_forecast = daily_variables_list + [
             "precipitation_probability_max",
-            "snowfall_sum",
-            "windspeed_10m_max",
-            "windgusts_10m_max",
-            "winddirection_10m_dominant",
-            "shortwave_radiation_sum",
             "et0_fao_evapotranspiration"
-        ],
-        "hourly": [
-            "temperature_2m",
-            "precipitation",
-            "snowfall",
-            "snow_depth",
-            "weathercode",
-            "cloudcover",
-            "windspeed_10m",
-            "winddirection_10m",
-            "windgusts_10m",
-            "surface_pressure",
-            "relativehumidity_2m"
         ]
-    }
+
+        params = {
+            "latitude": latitude,
+            "longitude": longitude,
+            "timezone": OPEN_METEO_TIMEZONE,
+            "forecast_days": days,
+            "daily": daily_variables_forecast,
+            "hourly": hourly_variables_list
+        }
 
     try:
         responses = openmeteo.weather_api(url, params=params)
@@ -155,15 +202,24 @@ def fetch_weather_data(latitude, longitude, days=16):
             )
         }
 
-        daily_variables = [
-            "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
-            "precipitation_sum", "precipitation_hours", "precipitation_probability_max",
-            "snowfall_sum", "windspeed_10m_max", "windgusts_10m_max",
-            "winddirection_10m_dominant", "shortwave_radiation_sum",
-            "et0_fao_evapotranspiration"
-        ]
+        # Variables diarias según modo
+        if mode == "forecast":
+            daily_vars = [
+                "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
+                "precipitation_sum", "precipitation_hours", "snowfall_sum",
+                "windspeed_10m_max", "windgusts_10m_max", "winddirection_10m_dominant",
+                "shortwave_radiation_sum", "precipitation_probability_max",
+                "et0_fao_evapotranspiration"
+            ]
+        else:  # historical
+            daily_vars = [
+                "temperature_2m_max", "temperature_2m_min", "temperature_2m_mean",
+                "precipitation_sum", "precipitation_hours", "snowfall_sum",
+                "windspeed_10m_max", "windgusts_10m_max", "winddirection_10m_dominant",
+                "shortwave_radiation_sum"
+            ]
 
-        for i, var in enumerate(daily_variables):
+        for i, var in enumerate(daily_vars):
             daily_data[var] = daily.Variables(i).ValuesAsNumpy()
 
         daily_df = pd.DataFrame(data=daily_data)
@@ -179,21 +235,23 @@ def fetch_weather_data(latitude, longitude, days=16):
             )
         }
 
-        hourly_variables = [
+        hourly_vars = [
             "temperature_2m", "precipitation", "snowfall", "snow_depth",
             "weathercode", "cloudcover", "windspeed_10m", "winddirection_10m",
             "windgusts_10m", "surface_pressure", "relativehumidity_2m"
         ]
 
-        for i, var in enumerate(hourly_variables):
+        for i, var in enumerate(hourly_vars):
             hourly_data[var] = hourly.Variables(i).ValuesAsNumpy()
 
         hourly_df = pd.DataFrame(data=hourly_data)
 
+        print(f"   ✅ Datos obtenidos exitosamente ({mode} mode)")
+
         return daily_df, hourly_df
 
     except Exception as e:
-        print(f"❌ Error en API: {e}")
+        print(f"❌ Error en API Open-Meteo ({mode}): {e}")
         return None, None
 
 print("✅ Función de ingesta definida")

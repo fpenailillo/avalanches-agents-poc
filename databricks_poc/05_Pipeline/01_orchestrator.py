@@ -17,12 +17,92 @@
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 1. Configuración del Pipeline
+# MAGIC ## 1. Configuración de Modo de Operación
 
 # COMMAND ----------
 
-from datetime import datetime
+from datetime import datetime, timedelta
 import time
+
+# Crear widgets de Databricks para configuración
+dbutils.widgets.dropdown(
+    "operation_mode",
+    "forecast",
+    ["forecast", "historical"],
+    "🔧 Modo de Operación"
+)
+
+dbutils.widgets.text(
+    "target_date",
+    "",
+    "📅 Fecha Objetivo (YYYY-MM-DD)"
+)
+
+# Leer valores de widgets
+operation_mode = dbutils.widgets.get("operation_mode")
+target_date_str = dbutils.widgets.get("target_date")
+
+print("=" * 80)
+print("⚙️  CONFIGURACIÓN DEL PIPELINE")
+print("=" * 80)
+
+# Configurar modo de operación
+if operation_mode == "historical":
+
+    # Validar que se proporcionó fecha
+    if not target_date_str:
+        raise ValueError(
+            "❌ ERROR: Debes especificar una fecha objetivo en modo histórico\n"
+            "   Formato: YYYY-MM-DD\n"
+            "   Ejemplo: 2023-08-15"
+        )
+
+    # Validar formato de fecha
+    try:
+        target_date = datetime.strptime(target_date_str, "%Y-%m-%d").date()
+    except ValueError:
+        raise ValueError(
+            f"❌ ERROR: Formato de fecha inválido: '{target_date_str}'\n"
+            "   Formato correcto: YYYY-MM-DD\n"
+            "   Ejemplo: 2023-08-15"
+        )
+
+    # Validar rango de fechas disponibles
+    min_date = datetime(2020, 1, 1).date()
+    max_date = datetime.now().date() - timedelta(days=2)
+
+    if target_date < min_date:
+        raise ValueError(f"❌ Fecha muy antigua. Mínimo: {min_date}")
+
+    if target_date > max_date:
+        raise ValueError(f"❌ Fecha muy reciente. Máximo: {max_date}")
+
+    # Configurar sistema en modo histórico
+    set_operation_mode("historical", target_date)
+
+    print(f"\n🕐 MODO HISTÓRICO ACTIVADO")
+    print(f"📅 Fecha objetivo: {target_date}")
+    print(f"📊 Se analizarán datos reales observados")
+    print(f"⚠️  Nota: Los agentes Topográfico y NLP usan datos base (no cambian)")
+
+else:  # forecast mode
+
+    set_operation_mode("forecast")
+    target_date = datetime.now().date()
+
+    print(f"\n🔴 MODO TIEMPO REAL ACTIVADO")
+    print(f"📅 Fecha actual: {target_date}")
+    print(f"🔮 Se generará pronóstico para próximos 16 días")
+
+print("=" * 80)
+print()
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ## 2. Configuración del Pipeline
+
+# COMMAND ----------
 
 # Configuración de ejecución
 PIPELINE_CONFIG = {
@@ -34,7 +114,7 @@ PIPELINE_CONFIG = {
     "verbose": True                 # Logging detallado
 }
 
-print("⚙️  CONFIGURACIÓN DEL PIPELINE")
+print("⚙️  CONFIGURACIÓN DE AGENTES")
 print("=" * 80)
 for key, value in PIPELINE_CONFIG.items():
     status = "✅" if value else "❌"
@@ -44,7 +124,7 @@ print("=" * 80)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 2. Verificación Inicial
+# MAGIC ## 3. Verificación Inicial
 
 # COMMAND ----------
 
@@ -67,7 +147,7 @@ print("✅ Entorno verificado\n")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Función de Logging
+# MAGIC ## 4. Función de Logging
 
 # COMMAND ----------
 
@@ -107,7 +187,7 @@ log_step("Pipeline", "0", "Sistema de logging inicializado", "success")
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 3. Agente 1: Topográfico
+# MAGIC ## 5. Agente 1: Topográfico
 
 # COMMAND ----------
 
@@ -148,7 +228,7 @@ else:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 4. Agente 2: NLP
+# MAGIC ## 6. Agente 2: NLP
 
 # COMMAND ----------
 
@@ -185,7 +265,7 @@ else:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 5. Agente 3: Meteorológico
+# MAGIC ## 7. Agente 3: Meteorológico
 
 # COMMAND ----------
 
@@ -226,7 +306,7 @@ else:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 6. Agente 4: Integrador
+# MAGIC ## 8. Agente 4: Integrador
 
 # COMMAND ----------
 
@@ -268,7 +348,7 @@ else:
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 7. Resumen de Ejecución
+# MAGIC ## 9. Resumen de Ejecución
 
 # COMMAND ----------
 
@@ -322,7 +402,7 @@ print("=" * 80)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 8. Validación de Outputs
+# MAGIC ## 10. Validación de Outputs
 
 # COMMAND ----------
 
@@ -358,7 +438,7 @@ print("=" * 80)
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ## 9. Estadísticas Finales
+# MAGIC ## 11. Estadísticas Finales
 
 # COMMAND ----------
 
