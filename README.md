@@ -298,6 +298,6 @@ Este proyecto es un POC académico desarrollado como parte de una tesis de Magí
 
 ---
 
-**Última actualización**: Noviembre 2024
+**Última actualización**: Noviembre 2025
 
 ⭐ Si este proyecto te resulta útil o interesante, por favor considera darle una estrella en GitHub
