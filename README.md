@@ -1,181 +1,303 @@
-# avalanches-agents-poc
+# 🏔️ POC Sistema de Predicción de Avalanchas - Chile
 
-Prompt para Claude Code - POC Sistema de Predicción de Avalanchas
-Necesito desarrollar una Prueba de Concepto (POC) para mi tesis de magíster: un sistema inteligente de predicción de riesgo de avalanchas para Chile basado en arquitectura multi-agente.
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![Databricks](https://img.shields.io/badge/Databricks-Ready-orange.svg)](https://databricks.com/)
+[![License](https://img.shields.io/badge/License-Academic-green.svg)](LICENSE)
 
-## CONTEXTO DEL PROYECTO
+> **Sistema Inteligente Multi-Agente para Predicción de Riesgo de Avalanchas**
+> Tesis de Magíster en Tecnologías de la Información
+> Universidad Técnica Federico Santa María
 
-Estoy desarrollando el primer sistema nacional de predicción de avalanchas para Chile, que integra 4 agentes de IA especializados:
-1. Agente Topográfico-Nival (análisis SRTM con PINNs)
-2. Agente de Monitoreo Satelital (Vision Transformers con Sentinel-2)
-3. Agente de Predicción Meteorológica (Time-LLM/LSTM)
-4. Agente Integrador de Riesgos (fusión con NLP y generación de boletines)
+## 📋 Descripción
 
-El objetivo es alcanzar >75% de precisión usando la Escala Europea de Peligro de Aludes (5 niveles).
+Prueba de Concepto (POC) de un sistema inteligente de predicción de riesgo de avalanchas para Chile, basado en arquitectura multi-agente. Este proyecto integra análisis topográfico, procesamiento de lenguaje natural, datos meteorológicos y modelos de inteligencia artificial para generar boletines de riesgo automatizados según la Escala Europea de Peligro de Aludes (EAWS).
 
-## TRABAJO YA REALIZADO
+### 🎯 Objetivos del Proyecto
 
-Tengo los siguientes componentes desarrollados y datos disponibles:
+- **Arquitectura Multi-Agente Escalable**: 4 agentes especializados trabajando de forma coordinada
+- **Predicción EAWS**: Clasificación de riesgo en 5 niveles según estándares europeos
+- **Automatización**: Generación de boletines de avalanchas sin intervención manual
+- **Fundamento para Sistema Nacional**: Base técnica para escalar a todo Chile
 
-### ✅ Datos de Relatos NLP (4000+ relatos)
-- Base de datos procesada de Andeshandbook
-- Extracción geográfica completa (latitud, longitud, sector, altitud)
-- Clasificación de riesgos y patrones técnicos
-- 8 categorías estructuradas: resumen, ubicación, características técnicas, condiciones temporales, equipamiento, riesgos, aspectos emocionales, metadatos
+### 🤖 Agentes del Sistema
 
-### ✅ Análisis Topográfico SRTM
-- Conexión establecida con Google Earth Engine
-- Pipeline funcional para extracción de pendientes críticas (30-45°)
-- Mapas generados para Región Metropolitana
-- Segmentación altitudinal implementada
-- Cálculos de orientación, altitud y gradiente térmico
+1. **Agente Topográfico-Nival**: Análisis SRTM con Google Earth Engine
+2. **Agente NLP**: Extracción de conocimiento de 4000+ relatos de montañismo
+3. **Agente Meteorológico**: Predicción con datos de Open-Meteo API
+4. **Agente Integrador**: Fusión multi-factorial y generación de boletines con LLM
 
-### ✅ Integración Meteorológica
-- Acceso configurado a APIs meteorológicas
-- Experiencia con datos de temperatura, precipitación e isoterma 0°C
-- Conexión con NASA Earth Data y Copernicus
+## 📁 Estructura del Proyecto
 
-## OBJETIVO DEL POC
+```
+avalanches-agents-poc/
+├── databricks_poc/              # Código principal del POC
+│   ├── 00_Setup/                # Scripts de configuración inicial
+│   │   ├── 00_environment_setup.py
+│   │   ├── 01_install_dependencies.py
+│   │   └── 02_create_unity_catalog.py
+│   ├── 01_Agent_Topografico/    # Agente de análisis topográfico
+│   │   ├── 01_srtm_processing.py
+│   │   └── 02_susceptibility_map.py
+│   ├── 02_Agent_NLP/            # Agente de procesamiento de relatos
+│   │   └── 01_extract_risk_patterns.py
+│   ├── 03_Agent_Meteorologico/  # Agente meteorológico
+│   │   ├── 01_weather_ingestion.py
+│   │   └── 02_trigger_detection.py
+│   ├── 04_Agent_Integrador/     # Agente integrador y generador de boletines
+│   │   ├── 01_risk_classification.py
+│   │   └── 02_boletin_generation.py
+│   ├── 05_Pipeline/             # Orquestación del sistema
+│   │   └── 01_orchestrator.py
+│   ├── config/                  # Configuraciones del proyecto
+│   │   └── zone_config.py
+│   ├── README.md                # Documentación técnica completa
+│   └── QUICKSTART.md            # Guía de inicio rápido
+├── google_srtm                  # Script GEE para análisis SRTM
+├── 01_weather_data_ingestion.py # Script de ingesta meteorológica
+├── 4.Analisis de redes con modelos NLP y Llms.ipynb  # Análisis exploratorio
+├── requirements.txt             # Dependencias del proyecto
+├── .gitignore                   # Archivos ignorados por Git
+└── README.md                    # Este archivo
+```
 
-Crear un prototipo funcional end-to-end que demuestre viabilidad técnica de la arquitectura multi-agente, integrando los 3-4 agentes en pipeline coordinado y generando un boletín de ejemplo para una zona piloto (ej: La Parva, Región Metropolitana).
+## 🚀 Inicio Rápido
 
-**IMPORTANTE**: El desarrollo se realizará en **Databricks**, aprovechando su capacidad de procesamiento distribuido y gestión de datos a gran escala.
+### Prerrequisitos
 
-## REQUISITOS TÉCNICOS
+- Python 3.9 o superior
+- Cuenta de Databricks (Community Edition o superior)
+- Unity Catalog habilitado (recomendado)
+- Acceso a internet para APIs meteorológicas
 
-### Plataforma:
-- **Databricks** (ambiente principal de desarrollo)
-- PySpark para procesamiento distribuido
-- MLflow para tracking de experimentos
-- Delta Lake para gestión de datos
+### Instalación
 
-### Datos disponibles (YA TENGO):
-- ✅ SRTM DEM (30m) - pipeline funcional en Google Earth Engine
-- ✅ Base de datos NLP de 4000+ relatos preprocesados
-- ✅ Acceso a APIs meteorológicas configurado
-- ✅ Opcional: acceso a Sentinel-2 vía Google Earth Engine
+1. **Clonar el repositorio**
+```bash
+git clone https://github.com/fpenailillo/avalanches-agents-poc.git
+cd avalanches-agents-poc
+```
 
-### Tecnologías sugeridas:
-- Python 3.9+
-- PySpark (Databricks)
-- PyTorch para modelos ML
-- GDAL/Rasterio para datos geoespaciales (compatible con Databricks)
-- LangChain para coordinación multi-agente
-- MLflow para experimentación
-- APIs: OpenWeatherMap, snowforecast, o similar (ya configuradas)
-- Google Earth Engine (ya tengo acceso)
+2. **Instalar dependencias locales** (opcional, para desarrollo)
+```bash
+pip install -r requirements.txt
+```
 
-### Salida esperada:
-- Pipeline funcional en Databricks con 3-4 agentes coordinados
-- Clasificación de riesgo en Escala Europea (1-5 niveles) para zona piloto
-- Boletín automatizado en texto con factores explicativos
-- Visualización básica (mapa de susceptibilidad + pronóstico)
-- Notebooks Databricks documentados y reproducibles
+3. **Configurar Databricks**
+   - Subir la carpeta `databricks_poc/` a tu workspace
+   - Ejecutar `00_Setup/01_install_dependencies.py`
+   - Ejecutar `00_Setup/02_create_unity_catalog.py`
 
-## TAREAS ESPECÍFICAS
+4. **Ejecutar el POC**
+```python
+# En Databricks
+%run 05_Pipeline/01_orchestrator.py
+```
 
-Por favor, ayúdame a:
+Para más detalles, consulta [databricks_poc/QUICKSTART.md](databricks_poc/QUICKSTART.md)
 
-1. **Diseñar la arquitectura del POC en Databricks**: 
-   - Estructura modular de agentes usando notebooks o jobs
-   - Flujo de datos con Delta Lake
-   - Coordinación entre agentes
-   - Estrategia de almacenamiento (raw/bronze → silver → gold)
+## 🏗️ Arquitectura Técnica
 
-2. **Implementar Agente 1 (Topográfico)**: 
-   - Adaptar mi pipeline existente de SRTM/Google Earth Engine a Databricks
-   - Cargar/procesar SRTM para zona piloto (33°S-34°S)
-   - Calcular pendientes críticas (30-45°) con procesamiento distribuido si es necesario
-   - Segmentar por altitud (4 bandas: <2500m, 2500-3200m, 3200-3500m, >3500m)
-   - Generar mapa base de susceptibilidad
-   - Almacenar resultados en Delta Lake
+### Arquitectura Medallion (Bronze → Silver → Gold)
 
-3. **Implementar Agente 2 (NLP - Integración de Relatos)**:
-   - Cargar mi base de datos de 4000+ relatos en Databricks
-   - Filtrar relatos relevantes para zona piloto
-   - Extraer patrones de riesgo históricos
-   - Identificar zonas de actividad frecuente
-   - Generar embeddings semánticos para similaridad
-   - Output: conocimiento experto estructurado por zona
+El sistema implementa la arquitectura Medallion para gestión de datos:
 
-4. **Implementar Agente 3 (Meteorológico)**:
-   - Integrar mis APIs meteorológicas ya configuradas en Databricks
-   - Obtener datos de temperatura, precipitación, isoterma 0°C
-   - Identificar condiciones gatillantes (>30cm/24h, fluctuaciones térmicas)
-   - Generar pronósticos por horizonte temporal (24h/48h/72h)
-   - Output: probabilidad de condiciones críticas por banda altitudinal
+- **🥉 Bronze Layer**: Datos raw (SRTM, relatos, datos meteorológicos)
+- **🥈 Silver Layer**: Features procesados (topografía, patrones NLP, triggers meteorológicos)
+- **🥇 Gold Layer**: Predicciones EAWS y boletines generados
 
-5. **Implementar Agente 4 (Integrador)**:
-   - Fusionar outputs de agentes 1, 2 y 3
-   - Aplicar reglas heurísticas basadas en Escala Europea
-   - Clasificar nivel de peligro (1-Débil a 5-Muy Fuerte)
-   - Usar LLM (vía API o modelo local) para generar boletín textual estructurado
-   - Incluir: nivel de peligro, factores contribuyentes, zonas afectadas, recomendaciones
-   - Formato compatible con estándares EAWS/SLF
+### Flujo de Ejecución
 
-6. **Pipeline de coordinación en Databricks**: 
-   - Workflows o jobs que ejecuten agentes secuencialmente
-   - Manejo de errores y logging
-   - Versionado de datos con Delta Lake
-   - Tracking de experimentos con MLflow
+1. **Agente Topográfico** → Analiza SRTM y calcula susceptibilidad
+2. **Agente NLP** → Extrae patrones de riesgo de relatos históricos
+3. **Agente Meteorológico** → Detecta condiciones gatillantes
+4. **Agente Integrador** → Fusiona datos y genera predicción EAWS
 
-7. **Visualización y validación**:
-   - Dashboard básico en Databricks SQL o notebook
-   - Mapa de susceptibilidad + pronóstico superpuesto
-   - Métricas de confianza por agente
-   - Comparación con pronósticos manuales (si disponibles)
+## ✅ Estado del Proyecto
 
-8. **Documentación**: 
-   - README con arquitectura del sistema
-   - Instrucciones de setup en Databricks
-   - Dependencias y configuración de APIs
-   - Guía de ejecución paso a paso
-   - Limitaciones del POC y trabajo futuro
+### Componentes Implementados
 
-## RESTRICCIONES
+- ✅ **Análisis Topográfico SRTM**: Pipeline funcional con Google Earth Engine
+- ✅ **Base de Datos NLP**: 4000+ relatos procesados de AndesHandbook
+- ✅ **Integración Meteorológica**: API Open-Meteo configurada
+- ✅ **Sistema Multi-Agente**: 4 agentes coordinados en Databricks
+- ✅ **Arquitectura Medallion**: Delta Lake con capas Bronze/Silver/Gold
+- ✅ **Generación de Boletines**: Con LLM (Llama 4) o templates
+- ✅ **Orquestación**: Pipeline automatizado con manejo de errores
 
-- POC debe ser ejecutable en Databricks Community Edition (o cluster básico)
-- Aprovechar procesamiento distribuido solo donde sea necesario (SRTM grande, análisis masivo NLP)
-- Priorizar simplicidad sobre precisión en esta fase (reglas heurísticas + ML básico está OK)
-- Si faltan datos específicos, usar estructura realista con valores mock
-- Tiempo estimado: POC funcional en 2-4 semanas de trabajo
+## 🛠️ Tecnologías Utilizadas
 
-## ZONA PILOTO SUGERIDA
+### Plataforma Principal
+- **Databricks**: Ambiente de desarrollo y ejecución
+- **PySpark**: Procesamiento distribuido de datos
+- **Delta Lake**: Arquitectura Medallion para gestión de datos
+- **MLflow**: Tracking de experimentos (preparado para futuras mejoras)
 
-La Parva, Región Metropolitana (33.35°S, 70.27°W):
-- Altitud: 2.500-3.500 msnm
-- Terreno conocido con datos de validación (Snowlab)
-- Área compacta (~10-20 km²)
-- Tengo relatos NLP para esta zona
-- Cobertura SRTM completa
-- Datos meteorológicos disponibles vía API
+### Análisis Geoespacial
+- **Google Earth Engine**: Procesamiento SRTM
+- **GDAL/Rasterio**: Manipulación de datos geoespaciales
+- **GeoPandas**: Análisis vectorial
 
-## ESTRUCTURA SUGERIDA EN DATABRICKS
-/Workspace/AvalanchePOC/
-├── 00_Setup/
-│   ├── install_dependencies.py
-│   ├── config_apis.py
-│   └── data_ingestion.py
-├── 01_Agent_Topografico/
-│   ├── srtm_processing.py
-│   ├── slope_analysis.py
-│   └── susceptibility_map.py
-├── 02_Agent_NLP/
-│   ├── load_relatos.py
-│   ├── filter_zona.py
-│   └── extract_patterns.py
-├── 03_Agent_Meteorologico/
-│   ├── api_integration.py
-│   ├── forecast_processing.py
-│   └── trigger_detection.py
-├── 04_Agent_Integrador/
-│   ├── fusion_logic.py
-│   ├── risk_classification.py
-│   └── boletin_generation.py
-├── 05_Pipeline/
-│   ├── orchestrator.py
-│   └── workflow_definition.json
-├── 06_Visualization/
-│   ├── dashboard.py
-│   └── maps.py
-└── README.md
+### Machine Learning y NLP
+- **PyTorch**: Framework de deep learning
+- **Transformers**: Modelos de procesamiento de lenguaje
+- **Sentence Transformers**: Embeddings semánticos
+- **NLTK**: Procesamiento de texto
+
+### APIs y Datos Externos
+- **Open-Meteo API**: Datos meteorológicos (gratuita)
+- **Google Earth Engine**: Datos SRTM
+- **AndesHandbook**: Base de relatos (4000+ documentos)
+
+### Generación de Boletines
+- **OpenAI/LangChain**: Integración con LLMs
+- **Databricks LLM**: Llama 4 para generación de texto
+
+## 📊 Datos del Proyecto
+
+### Fuentes de Datos
+
+| Tipo | Fuente | Descripción | Cobertura |
+|------|--------|-------------|-----------|
+| **Topografía** | SRTM/GEE | DEM 30m resolución | Región Metropolitana |
+| **Meteorología** | Open-Meteo | Pronóstico 16 días | Zona piloto |
+| **NLP** | AndesHandbook | 4000+ relatos | Chile completo |
+| **Ubicaciones** | Manual | Centros de esquí | RM (expandible) |
+
+### Zona Piloto
+
+📍 **La Parva, Región Metropolitana**
+- **Coordenadas**: -33.35°S, -70.27°W
+- **Elevación**: 2500-3500 m.s.n.m.
+- **Área**: ~10-20 km²
+- **Justificación**: Datos de validación disponibles, terreno conocido
+
+## 🎨 Características Principales
+
+### Sistema Multi-Agente Coordinado
+- ✅ **4 agentes especializados** trabajando de forma coordinada
+- ✅ **Orquestación automatizada** con manejo de errores
+- ✅ **Logging detallado** para debugging y monitoreo
+
+### Arquitectura de Datos Robusta
+- ✅ **Arquitectura Medallion** (Bronze → Silver → Gold)
+- ✅ **Delta Lake** para versionado y confiabilidad
+- ✅ **Unity Catalog** para gobernanza de datos
+
+### Análisis Inteligente
+- ✅ **Análisis topográfico** con detección de pendientes críticas (30-45°)
+- ✅ **Extracción de patrones NLP** de experiencias históricas
+- ✅ **Detección de triggers meteorológicos** (6 tipos de condiciones)
+- ✅ **Fusión multi-factorial** con pesos configurables
+
+### Generación Automatizada de Boletines
+- ✅ **Clasificación EAWS** (5 niveles de peligro)
+- ✅ **Generación con LLM** (Llama 4) o templates estructurados
+- ✅ **Formato profesional** compatible con estándares internacionales
+
+## 📈 Escala EAWS (European Avalanche Warning Services)
+
+| Nivel | Etiqueta | Descripción | Color |
+|-------|----------|-------------|-------|
+| **1** | Débil | Nieve generalmente bien estabilizada | 🟢 Verde |
+| **2** | Limitado | Nieve moderadamente estabilizada | 🟡 Amarillo |
+| **3** | Notable | Nieve débilmente estabilizada en muchas pendientes | 🟠 Naranja |
+| **4** | Fuerte | Nieve débilmente estabilizada en mayoría de pendientes | 🔴 Rojo |
+| **5** | Muy Fuerte | Nieve inestable generalizada | 🟣 Morado |
+
+## 🔮 Trabajo Futuro
+
+### Fase 2: Mejoras de Modelos ML
+- [ ] Implementar PINNs (Physics-Informed Neural Networks) para topografía
+- [ ] Integrar Time-LLM para predicción meteorológica
+- [ ] Optimizar pesos de fusión con aprendizaje automático
+- [ ] Validar con datos históricos de Snowlab
+
+### Fase 3: Escalamiento
+- [ ] Expandir a toda la Región Metropolitana
+- [ ] Agregar más centros de esquí y zonas de montaña
+- [ ] Implementar Agente de Monitoreo Satelital (Sentinel-2)
+- [ ] Dashboard interactivo en tiempo real
+
+### Fase 4: Producción
+- [ ] API REST para consultas externas
+- [ ] Integración con sistemas de emergencia
+- [ ] Aplicación móvil para montañistas
+- [ ] Sistema de alertas automáticas vía SMS/email
+
+## ⚠️ Limitaciones del POC
+
+Este proyecto es una Prueba de Concepto con las siguientes limitaciones:
+
+### Datos
+- DEM sintético si Google Earth Engine no está disponible
+- Base NLP limitada a zona piloto (La Parva)
+- Sin validación con datos observacionales de avalanchas reales
+- Sin datos de campo para calibración
+
+### Modelos
+- Reglas heurísticas simples (no ML avanzado en esta fase)
+- Pesos de fusión fijos (no optimizados mediante aprendizaje)
+- Sin calibración con eventos históricos
+- Generación de boletines con templates si LLM no disponible
+
+### Cobertura
+- Enfocado en zona piloto única
+- Sin análisis de múltiples zonas simultáneas
+- Sin validación temporal extensa
+- Limitado a Región Metropolitana
+
+### Infraestructura
+- Diseñado para Databricks Community Edition o cluster básico
+- Procesamiento distribuido limitado
+- Sin API REST para consultas externas
+- Sin sistema de alertas en tiempo real
+
+## 📚 Documentación
+
+- **[README Principal](README.md)**: Este archivo
+- **[README Técnico](databricks_poc/README.md)**: Documentación completa del sistema
+- **[Guía Rápida](databricks_poc/QUICKSTART.md)**: Inicio rápido en 3 pasos
+- **[Configuración](databricks_poc/config/zone_config.py)**: Parámetros del sistema
+
+## 🤝 Contribuciones
+
+Este es un proyecto académico de tesis de magíster. Si tienes sugerencias o encuentras problemas:
+
+1. Abre un issue en GitHub
+2. Describe el problema o sugerencia con detalle
+3. Incluye ejemplos o capturas si es posible
+
+## 📝 Licencia
+
+Este proyecto es un POC académico desarrollado como parte de una tesis de Magíster en Tecnologías de la Información en la Universidad Técnica Federico Santa María.
+
+## 👤 Autor
+
+**Francisco Javier Peñailillo San Martín**
+- 🎓 Estudiante de Magíster en Tecnologías de la Información
+- 🏫 Universidad Técnica Federico Santa María
+- 🔬 Especialización: IA aplicada a seguridad en montaña
+- 📧 Contacto: [GitHub](https://github.com/fpenailillo)
+
+## 🙏 Agradecimientos
+
+- **AndesHandbook** - Base de datos de relatos de montañismo
+- **Open-Meteo** - API meteorológica gratuita
+- **Google Earth Engine** - Acceso a datos SRTM
+- **Databricks** - Plataforma de desarrollo
+- **Comunidad montañista chilena** - Inspiración y contexto del proyecto
+- **EAWS** - Estándares de clasificación de peligro de avalanchas
+
+## 📖 Referencias
+
+1. **EAWS (European Avalanche Warning Services)** - https://www.avalanches.org
+2. **SRTM (Shuttle Radar Topography Mission)** - https://www2.jpl.nasa.gov/srtm/
+3. **Open-Meteo API** - https://open-meteo.com/en/docs
+4. **AndesHandbook** - https://www.andeshandbook.org
+5. **Databricks Documentation** - https://docs.databricks.com
+
+---
+
+**Última actualización**: Noviembre 2024
+
+⭐ Si este proyecto te resulta útil o interesante, por favor considera darle una estrella en GitHub

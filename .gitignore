@@ -1,0 +1,224 @@
+# ================================================================================
+# POC Sistema de Predicción de Avalanchas - .gitignore
+# ================================================================================
+
+# ================================================================================
+# PYTHON
+# ================================================================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ================================================================================
+# ENTORNOS VIRTUALES
+# ================================================================================
+venv/
+ENV/
+env/
+.venv/
+.conda/
+conda-meta/
+
+# ================================================================================
+# JUPYTER NOTEBOOKS
+# ================================================================================
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+Untitled*.ipynb
+*-checkpoint.ipynb
+
+# ================================================================================
+# DATABRICKS
+# ================================================================================
+.databricks/
+dbfs/
+*.dbr
+*.dbc
+databricks-cli/
+.databricks-connect
+
+# ================================================================================
+# DATOS SENSIBLES Y CONFIGURACIÓN
+# ================================================================================
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+credentials.json
+service-account*.json
+config/secrets.yaml
+config/api_keys.yaml
+*.credentials
+
+# ================================================================================
+# GOOGLE EARTH ENGINE
+# ================================================================================
+.earthengine/
+earthengine-token.json
+ee-token.json
+
+# ================================================================================
+# DATOS Y ARCHIVOS GRANDES
+# ================================================================================
+# Archivos de datos raw
+data/raw/*.tif
+data/raw/*.hdf
+data/raw/*.nc
+data/raw/*.geojson
+*.srtm
+*.dem
+
+# Archivos procesados grandes
+data/processed/*.parquet
+data/processed/*.delta
+data/processed/*.csv
+*.pkl
+*.pickle
+*.h5
+*.hdf5
+
+# Modelos entrenados
+models/*.pt
+models/*.pth
+models/*.ckpt
+models/*.model
+models/*.joblib
+
+# Caché de datos
+*.cache/
+.cache/
+cache/
+
+# ================================================================================
+# LOGS Y OUTPUTS
+# ================================================================================
+logs/
+*.log
+*.out
+*.err
+mlruns/
+mlflow/
+.mlflow/
+
+# ================================================================================
+# IDE Y EDITORES
+# ================================================================================
+# VSCode
+.vscode/
+*.code-workspace
+
+# PyCharm
+.idea/
+*.iml
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+
+# ================================================================================
+# SISTEMA OPERATIVO
+# ================================================================================
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Linux
+.directory
+
+# ================================================================================
+# TESTING Y COBERTURA
+# ================================================================================
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+
+# ================================================================================
+# DOCUMENTACIÓN TEMPORAL
+# ================================================================================
+docs/_build/
+site/
+.doctrees/
+*.rst~
+
+# ================================================================================
+# ARCHIVOS TEMPORALES
+# ================================================================================
+tmp/
+temp/
+*.tmp
+*.temp
+*.bak
+*.backup
+
+# ================================================================================
+# NOTEBOOKS EXPERIMENTALES
+# ================================================================================
+scratch/
+experiments/
+playground/
+debug/
+test_*.ipynb
+
+# ================================================================================
+# DELTA LAKE LOCAL
+# ================================================================================
+_delta_log/
+*.delta/
+
+# ================================================================================
+# ARCHIVOS DE RESULTADOS ESPECÍFICOS DEL PROYECTO
+# ================================================================================
+# Mapas generados
+outputs/maps/*.png
+outputs/maps/*.jpg
+outputs/maps/*.pdf
+
+# Boletines generados (excepto ejemplos)
+outputs/bulletins/*.txt
+!outputs/bulletins/example_*.txt
+
+# Predicciones exportadas
+outputs/predictions/*.csv
+outputs/predictions/*.json
+
+# ================================================================================
+# ARCHIVOS DE CONFIGURACIÓN LOCALES
+# ================================================================================
+config/local_*.py
+config/*_local.yaml
+databricks_poc/config/local_*.py
